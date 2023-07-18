@@ -185,8 +185,9 @@ def randomInt(start,stop):
 def shiftIndex_bounded(init, size):
     return (init + 1) % size
 
-def write_2zipstream(version, datapack_name, datapack_description, filepath_list, loottables, min_value, max_value zipbytes):
+def write_2zipstream(version, datapack_name, datapack_description, filepath_list, loottables, min_value, max_value):
     print("Beginning writting...")
+    zipbytes = io.BytesIO()
     prefix_name = "lootbox_{}.json"
     prefix_path = 'data/minecraft/'
     combined_table_path = prefix_path + 'loot_tables/loot_boxes'
@@ -300,8 +301,7 @@ def main():
     print('Preparing data...')
     datapack_filename = '{}.zip'.format(datapack_name)
     datapack_description = 'Lootboxes, Box Count:{}, Seed:{}'.format(box_count,seed)
-    zipbytes = io.BytesIO()
-    write_2zipstream(version, datapack_name, datapack_description, filepath_list, loottables, min_value, max_value zipbytes)
+    write_2zipstream(version, datapack_name, datapack_description, filepath_list, loottables, min_value, max_value)
 
     print('Zipping files...')
     with open(datapack_filename, 'wb') as file:
