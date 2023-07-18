@@ -34,9 +34,9 @@ def get_paths2file(path):
 def generate_loottables(filepath_list, box_count, isUnit):
     print("Generating lootboxes")
     list_loot = collect_unitEntries(filepath_list)
-    #add_identifier(list_loot)
+    add_identifier(list_loot)
     list_lootboxes = distLoot_boxes(list_loot,box_count,isUnit)
-    #adjust_weight(list_lootboxes)
+    adjust_weight(list_lootboxes)
     return list_lootboxes
 
 
@@ -47,8 +47,7 @@ def adjust_weight(list_lootbox):
         for entry in lootbox:
             weight = entry["weight"]
            # common item in origina table are now also common items in new table
-            # entry["weight"] = int(math.ceil(weight * total)) # maybe this is the issue
-            entry["weight"] = int(weight * total)
+            entry["weight"] = int(math.ceil(weight * total)) # maybe this is the issue
             del entry["old_weight"]
 
 # set weight as percent of total, save old_weight for later
@@ -189,7 +188,7 @@ def write_2zipstream(version, datapack_name, datapack_description, filepath_list
     print("Beginning writting...")
     prefix_name = "lootbox_{}.json"
     prefix_path = 'data/minecraft/'
-    combined_table_path = prefix_path + 'loot_tables/loot_boxes'
+    combined_table_path = prefix_path + 'loot_tables/lootboxes'
     zipstream = zipfile.ZipFile(zipbytes, 'w', zipfile.ZIP_DEFLATED, False)
     zipstream_lootboxes(min_value, max_value, combined_table_path, prefix_name, loottables, zipstream)
     zipstream_editedItems(filepath_list, prefix_path, loottables, zipstream)
