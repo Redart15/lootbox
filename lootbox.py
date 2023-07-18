@@ -90,7 +90,6 @@ def collect_entries(file):
     list_entries = []
     sub_files = [file]
     while(sub_files):
-        print(sub_files[0])
         data = load_json(sub_files[0])
         sub_files.remove(sub_files[0])
         if not "pools" in data:
@@ -102,15 +101,10 @@ def collect_entries(file):
                 # find all tables and adds them adjusted to the list_entries
                 # need to test this extensivly, to see if the function applies the result correctly
                 if "loot_table" in entry["type"]:
-                    print("taken")
                     local_path = entry["name"]
                     local_path = local_path.removeprefix("minecraft:")
                     next_subfile = os.path.join('loot_tables',local_path + '.json')
                     sub_files.append(next_subfile)
-                    # list_subentries = collect_entries(path)
-                    # add_identifier(list_subentries)
-                    # for subentry in list_subentries:
-                    #     list_entries.append(subentry)
                 else:
                     entry = remove_conditions(entry)
                     list_entries.append(entry)
@@ -204,7 +198,7 @@ def write_2zipstream(version, datapack_name, datapack_description, filepath_list
 
     zipstream = zipfile.ZipFile(zipbytes, 'w', zipfile.ZIP_DEFLATED, False)
     zipstream_lootboxes(min_value, max_value, combined_table_path, prefix_name, loottables, zipstream)
-    zipstream_editedItems(filepath_list, prefix_path, loottables, zipstream)
+    zipstream_editedItems(filepath_list, prefix_path, len(loottables), zipstream)
     zipstream_metadata(version, datapack_name, datapack_description, zipstream)
     zipstream.close()
 
@@ -216,15 +210,15 @@ def zipstream_lootboxes(min_value, max_value, combined_table_path, prefix_name, 
         source = os.path.join(combined_table_path,name)
         zip.writestr(source, json.dumps(output_data, indent=4))
 
-def zipstream_editedItems(filepath_list, prefix_path, loottables, zip):
-    index = randomInt(0,len(loottables)-1)
+def zipstream_editedItems(filepath_list, prefix_path, size_loottable, zip):
+    index = randomInt(0,size_loottable-1)
     print("Writting and adjusting loottables...")
     for file in filepath_list:
-        index = (index + 1) % len(loottables)
-        data = add_lootbox_2items(file, loottables, index)
+        index = (index + 1) % size_loottable
+        data = add_lootbox_2items(file, index)
         zip.writestr(os.path.join(prefix_path, file), json.dumps(data,indent=4))
 
-def add_lootbox_2items(file, loottables, index):
+def add_lootbox_2items(file, index): # does not use loottable
     data = load_json(file)
     if not "pools" in data:
         return data
