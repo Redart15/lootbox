@@ -185,21 +185,21 @@ def randomInt(start,stop):
 def shiftIndex_bounded(init, size):
     return (init + 1) % size
 
-def write_2zipstream(version, datapack_name, datapack_description, filepath_list, loottables, zipbytes):
+def write_2zipstream(version, datapack_name, datapack_description, filepath_list, loottables, min_value, max_value zipbytes):
     print("Beginning writting...")
     prefix_name = "lootbox_{}.json"
     prefix_path = 'data/minecraft/'
     combined_table_path = prefix_path + 'loot_tables/loot_boxes'
     zipstream = zipfile.ZipFile(zipbytes, 'w', zipfile.ZIP_DEFLATED, False)
-    zipstream_lootboxes(combined_table_path, prefix_name, loottables, zipstream)
+    zipstream_lootboxes(min_value, max_value, combined_table_path, prefix_name, loottables, zipstream)
     zipstream_editedItems(filepath_list, prefix_path, loottables, zipstream)
     zipstream_metadata(version, datapack_name, datapack_description, zipstream)
     zipstream.close()
 
-def zipstream_lootboxes(combined_table_path, prefix_name, loottables, zip):
+def zipstream_lootboxes(min_value, max_value, combined_table_path, prefix_name, loottables, zip):
     print("Writting lootboxes...")
-    min_value = 1
-    max_value = 5
+    # min_value = 1
+    # max_value = 5
     for x in range(0,len(loottables)):
         name = prefix_name.format(x)
         output_data = {'pools': [{'rolls' : {"min": min_value, "max": max_value},'entries': loottables[x]}]}
@@ -275,6 +275,9 @@ def main():
     version = 16
     isUnit = True
 
+    min_value = 5
+    max_value = 5
+
     if len(sys.argv) >= 2:
         try:
             seed = int(sys.argv[1])
@@ -298,7 +301,7 @@ def main():
     datapack_filename = '{}.zip'.format(datapack_name)
     datapack_description = 'Lootboxes, Box Count:{}, Seed:{}'.format(box_count,seed)
     zipbytes = io.BytesIO()
-    write_2zipstream(version, datapack_name, datapack_description, filepath_list, loottables, zipbytes)
+    write_2zipstream(version, datapack_name, datapack_description, filepath_list, loottables, min_value, max_value zipbytes)
 
     print('Zipping files...')
     with open(datapack_filename, 'wb') as file:
