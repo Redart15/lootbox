@@ -5,8 +5,21 @@ import sys
 import zipfile
 import io
 import math
+import yaml
+
+
 
 """
+TODO:
+    write some help, for not programmers
+        write --help for python script
+        write a popup in chat for help
+        write something to disable popup
+    write some helping inbetween steps
+        2 output streams
+            to log file of some sort
+            to screen
+
 comments are always pointing down
 structure:
 loot_table:pool
@@ -24,19 +37,14 @@ def get_paths2file(path):
     for dirpath, dirnames, filenames in os.walk(path):
         dirnames[:] = [dirname for dirname in dirnames if dirname not in excluded_dir] # for testing it excludes 'combined'
         for filename in filenames:
-            # if filename == "fishing.json":
-            #     continue
             file = os.path.join(dirpath, filename)
-            #print(file)
             file_list.append(file)
     return file_list    
 
 def generate_loottables(filepath_list, box_count, isUnit):
     print("Generating lootboxes")
     list_loot = collect_unitEntries(filepath_list)
-    list_lootboxes = distLoot_boxes(list_loot,box_count,isUnit)
-    # for lootbox in list_lootboxes:
-    #     adjust_weight(lootbox)   
+    list_lootboxes = distLoot_boxes(list_loot,box_count,isUnit) 
     return list_lootboxes
 
 
@@ -70,39 +78,6 @@ def get_total(unitEntries, sum_over):
             total = total + 1
             entry[sum_over] = 1
     return total
-        
-
-
-def collect_unitEntriess(filepath_list):
-    # unitEntries is a collection of entries of a given table
-    list_unitEntries = []
-    for file in filepath_list:
-        data = load_json(file) # load json
-        if not "pools" in data:
-            continue
-        pools = data["pools"]
-        # collect all entries to a list to keep then as one pools
-        list_entries = []
-        for pool in pools: 
-            entries = pool["entries"]
-            for entry in entries:
-                if "loot_table" in entry["type"]:
-                    print("# ADD TO QUEUE",entry["name"])
-                    # data load
-                    # for all pools
-                    # get enties
-                    # check for loot_table
-                    # remove conditions
-                    # add table to list
-                    # add_indentifier
-                    # adjust weight
-                # add list to list_entries
-                entry = remove_conditions(entry)
-                list_entries.append(entry)
-        add_identifier(list_entries)    
-        list_unitEntries.append(list_entries)
-    # for later need to unbox the element of each list_entries back to entries
-    return list_unitEntries      
 
 def collect_unitEntries(filepath_list):
     list_unitEntries = []
@@ -113,25 +88,33 @@ def collect_unitEntries(filepath_list):
 
 def collect_entries(file):
     list_entries = []
-    data = load_json(file)
-    if not "pools" in data:
-        return list_entries
-    pools = data["pools"]
-    for pool in pools:
-        entries = pool["entries"]
-        for entry in entries:
-            if "loot_table" in entry["type"]:
-                local_path = entry["name"]
-                local_path = local_path.removeprefix("minecraft:")
-                path = os.path.join('loot_tables',local_path + '.json')
-                list_subentries = collect_entries(path)
-                add_identifier(list_subentries)
-                for subentry in list_subentries:
-                    list_entries.append(subentry)
-            else:
-                entry = remove_conditions(entry)
-                list_entries.append(entry)
-    add_identifier(list_entries) 
+    sub_files = [file]
+    while(sub_files):
+        print(sub_files[0])
+        data = load_json(sub_files[0])
+        sub_files.remove(sub_files[0])
+        if not "pools" in data:
+            continue
+        pools = data["pools"]
+        for pool in pools:
+            entries = pool["entries"]
+            for entry in entries:
+                # find all tables and adds them adjusted to the list_entries
+                # need to test this extensivly, to see if the function applies the result correctly
+                if "loot_table" in entry["type"]:
+                    print("taken")
+                    local_path = entry["name"]
+                    local_path = local_path.removeprefix("minecraft:")
+                    next_subfile = os.path.join('loot_tables',local_path + '.json')
+                    sub_files.append(next_subfile)
+                    # list_subentries = collect_entries(path)
+                    # add_identifier(list_subentries)
+                    # for subentry in list_subentries:
+                    #     list_entries.append(subentry)
+                else:
+                    entry = remove_conditions(entry)
+                    list_entries.append(entry)
+        add_identifier(list_entries) 
     return list_entries
 
 # just to shorten code
@@ -273,37 +256,22 @@ def zipstream_metadata(version, datapack_name, datapack_description, zipstream):
 
 
 def main():
-    """
-    TODO:
-        fatal
-            no git so idk how to return to working state without massakering alot
-        error
-            only works as command not as actual minable blocks
-        bug
-            item -> loottable -> colored sheep -> sheep => can not be killed by player cause it a drop of a loottable
-            need to somehow prevent tables leaving loottable. idee, dont allow table references to be included.
-        add a way to set settings for:
-            seed
-            box count
-            version
-            isUnit  
-        write some help, for not programmers
-            write --help for python script
-            write a popup in chat for help
-            write something to disable popup
-        write some helping inbetween steps
-            2 output streams
-                to log file of some sort
-                to screen
-    """
-
-    print('Reading in settings...')
-    box_count = 4
-    version = 16
-    isUnit = True
-
-    min_value = 5
-    max_value = 5
+    current_directory = os.getcwd()
+    path = os.path.join(current_directory, "setting.yml")
+    if not os.path.exists(path):
+        with open(path, 'w') as config_file:
+             config_file.write(config_context)
+        print("Before generating the loottable, you might want to adjust settings in setting.yaml")
+        print("After that just start the script a new.")
+    else:
+        print('Reading in settings...')
+        with open(path, 'r') as config_file:
+            config_data = yaml.load(config_file, Loader=yaml.FullLoader)
+        version = config_data.get("version",16)
+        box_count = config_data.get("box_count",50)
+        min_value = config_data.get("min_value",1)
+        max_value = config_data.get("max_value",5)
+        isUnit = config_data.get("isUnit",True)
 
     if len(sys.argv) >= 2:
         try:
@@ -337,6 +305,24 @@ def main():
     print('Created datapack {}'.format(datapack_filename))
 
 
+config_context = """
+# 1.20 is Version 16, every major release add 1 to version
+# be warned this script may not be compatable with older versions
+version: 16
+
+# using same number generate the same table
+seed: 1
+
+# determins how many different lootboxes there will be (1-100 recommended)
+box_count: 50
+
+# sets how many rolls are made on the lootbox tables itself
+min_value: 1
+max_value: 5
+
+# some table are made up of a lot of subtables, keep all these table together when distrubitung into lootboxes
+isUnit: True
+"""
 
 if __name__ == '__main__':
     excluded_dir = ['combined',"combiined"]
