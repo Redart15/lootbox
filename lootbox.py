@@ -114,11 +114,11 @@ def remove_conditions(toadd):
 
 def remove_functions(toadd):
     if "functions" in toadd:
-        # del toadd["functions"]
-        function_list = toadd["functions"]
-        for func in function_list:
-            if "minecraft:looting_enchant" in func["function"]:
-                function_list.remove(func)
+        del toadd["functions"]
+        # function_list = toadd["functions"]
+        # for func in function_list:
+        #     if "minecraft:looting_enchant" in func["function"]:
+        #         function_list.remove(func)
 
 def remove_2ndConditions(toadd):
     if "conditions" in toadd:
@@ -185,9 +185,8 @@ def randomInt(start,stop):
 def shiftIndex_bounded(init, size):
     return (init + 1) % size
 
-def write_2zipstream(version, datapack_name, datapack_description, filepath_list, loottables, min_value, max_value):
+def write_2zipstream(version, datapack_name, datapack_description, filepath_list, loottables, min_value, max_value, zipbytes):
     print("Beginning writting...")
-    zipbytes = io.BytesIO()
     prefix_name = "lootbox_{}.json"
     prefix_path = 'data/minecraft/'
     combined_table_path = prefix_path + 'loot_tables/loot_boxes'
@@ -299,9 +298,10 @@ def main():
     loottables = generate_loottables(filepath_list, box_count, isUnit)
 
     print('Preparing data...')
+    zipbytes = io.BytesIO()
     datapack_filename = '{}.zip'.format(datapack_name)
     datapack_description = 'Lootboxes, Box Count:{}, Seed:{}'.format(box_count,seed)
-    write_2zipstream(version, datapack_name, datapack_description, filepath_list, loottables, min_value, max_value)
+    write_2zipstream(version, datapack_name, datapack_description, filepath_list, loottables, min_value, max_value, zipbytes)
 
     print('Zipping files...')
     with open(datapack_filename, 'wb') as file:
