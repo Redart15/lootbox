@@ -24,33 +24,31 @@ def get_paths2file(path):
     for dirpath, dirnames, filenames in os.walk(path):
         dirnames[:] = [dirname for dirname in dirnames if dirname not in excluded_dir] # for testing it excludes 'combined'
         for filename in filenames:
-            if filename == "fishing.json":
-                continue
+            # if filename == "fishing.json":
+            #     continue
             file = os.path.join(dirpath, filename)
-            print(file)
+            #print(file)
             file_list.append(file)
     return file_list    
 
 def generate_loottables(filepath_list, box_count, isUnit):
     print("Generating lootboxes")
     list_loot = collect_unitEntries(filepath_list)
-    for loot in list_loot:
-        add_identifier(loot)
     list_lootboxes = distLoot_boxes(list_loot,box_count,isUnit)
-    for lootbox in list_lootboxes:
-        adjust_weight(lootbox)   
+    # for lootbox in list_lootboxes:
+    #     adjust_weight(lootbox)   
     return list_lootboxes
 
 
 def adjust_weight(lootbox):
     #for lootbox in list_lootbox:
         # new table has different total weight
-    total = get_total(lootbox,"old_weight")
+    total = get_total(lootbox,"weight")
     for entry in lootbox:
         weight = entry["weight"]
         # common item in origina table are now also common items in new table
         entry["weight"] = int(math.ceil(weight * total)) # maybe this is the issue
-        del entry["old_weight"]
+        del entry["frequency"]
 
 # set weight as percent of total, save old_weight for later
 def add_identifier(unitEntries):
@@ -60,8 +58,7 @@ def add_identifier(unitEntries):
         if not "weight" in entry:
             entry["weight"] = 1
         weight = entry["weight"]
-        entry["weight"] = round(weight/total, 2)
-        entry["old_weight"] = weight
+        entry["frequency"] = round(weight/total, 2)
 
 # get total weight, for modification
 def get_total(unitEntries, sum_over):
@@ -76,7 +73,7 @@ def get_total(unitEntries, sum_over):
         
 
 
-def collect_unitEntries(filepath_list):
+def collect_unitEntriess(filepath_list):
     # unitEntries is a collection of entries of a given table
     list_unitEntries = []
     for file in filepath_list:
@@ -85,18 +82,56 @@ def collect_unitEntries(filepath_list):
             continue
         pools = data["pools"]
         # collect all entries to a list to keep then as one pools
-        list_entries = collect_entries(pools)
+        list_entries = []
+        for pool in pools: 
+            entries = pool["entries"]
+            for entry in entries:
+                if "loot_table" in entry["type"]:
+                    print("# ADD TO QUEUE",entry["name"])
+                    # data load
+                    # for all pools
+                    # get enties
+                    # check for loot_table
+                    # remove conditions
+                    # add table to list
+                    # add_indentifier
+                    # adjust weight
+                # add list to list_entries
+                entry = remove_conditions(entry)
+                list_entries.append(entry)
+        add_identifier(list_entries)    
         list_unitEntries.append(list_entries)
     # for later need to unbox the element of each list_entries back to entries
     return list_unitEntries      
 
-def collect_entries(pools):
+def collect_unitEntries(filepath_list):
+    list_unitEntries = []
+    for file in filepath_list:
+        list_unitEntries.append(collect_entries(file))
+    return list_unitEntries
+
+
+def collect_entries(file):
     list_entries = []
-    for pool in pools: 
+    data = load_json(file)
+    if not "pools" in data:
+        return list_entries
+    pools = data["pools"]
+    for pool in pools:
         entries = pool["entries"]
         for entry in entries:
-            entry = remove_conditions(entry)
-            list_entries.append(entry)
+            if "loot_table" in entry["type"]:
+                local_path = entry["name"]
+                local_path = local_path.removeprefix("minecraft:")
+                path = os.path.join('loot_tables',local_path + '.json')
+                list_subentries = collect_entries(path)
+                add_identifier(list_subentries)
+                for subentry in list_subentries:
+                    list_entries.append(subentry)
+            else:
+                entry = remove_conditions(entry)
+                list_entries.append(entry)
+    add_identifier(list_entries) 
     return list_entries
 
 # just to shorten code
@@ -153,6 +188,8 @@ def distLoot_boxes(list_loot, box_count,isUnit):
         loot = list_loot[random_index]
         func(loot,lootbox)
         del list_loot[random_index]
+    for lootbox in list_lootboxes:
+        adjust_weight(lootbox)
     return list_lootboxes
 
 def dist_unitEntries(list_entries,lootbox):
@@ -302,5 +339,5 @@ def main():
 
 
 if __name__ == '__main__':
-    excluded_dir = ['combined',"combiined","sheep"]
+    excluded_dir = ['combined',"combiined"]
     main()
