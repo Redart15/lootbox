@@ -248,6 +248,14 @@ def zipstream_metadata(version, datapack_name, datapack_description, zipstream):
     zipstream.writestr(tags_path, json.dumps(tags_content))
     zipstream.writestr(mcfunction_path, mcfunction_content)
 
+def read_config(config, tupel, default, type):
+    value = config.get(tupel, default)
+    if isinstance(value, type):
+        return value
+    else:
+        print("The {} is not an {}".format(tupel,type.__name__))
+        print("Using default value {} for {}".format(default,tupel))
+        return default
 
 def main():
     current_directory = os.getcwd()
@@ -257,16 +265,19 @@ def main():
              config_file.write(config_context)
         print("Before generating the loottable, you might want to adjust settings in setting.yaml")
         print("After that just start the script a new.")
+        exit()
     else:
         print('Reading in settings...')
         with open(path, 'r') as config_file:
             config_data = yaml.load(config_file, Loader=yaml.FullLoader)
-        version = config_data.get("version",16)
-        box_count = config_data.get("box_count",50)
-        frequenzy = config_data.get("frequenzy",3)
-        min_value = config_data.get("min_value",1)
-        max_value = config_data.get("max_value",5)
-        isUnit = config_data.get("isUnit",True)
+        version = read_config(config_data,"version",16,int)
+        box_count = read_config(config_data,"box_count",50,int)
+        frequenzy = read_config(config_data,"frequenzy",3,int)
+        min_value = read_config(config_data,"min_value",1,int)
+        max_value = read_config(config_data,"max_value",5,int)
+        isUnit = read_config(config_data,"isUnit",True,bool)
+
+
 
     if len(sys.argv) >= 2:
         try:
@@ -280,7 +291,7 @@ def main():
         seed = int.from_bytes(random_data, byteorder="big")  
 
     random.seed(seed)
-    datapack_name = 'lootbox'
+    datapack_name = 'lootbox_{}'.format(seed)
     
 
     print('Generating datapack...')
@@ -305,9 +316,6 @@ config_context = """
 # be warned this script may not be compatable with older versions
 version: 16
 
-# using same number generate the same table
-seed: 1
-
 # determins how many different lootboxes there will be (1-100 recommended)
 box_count: 50
 
@@ -325,3 +333,7 @@ isUnit: True
 if __name__ == '__main__':
     excluded_dir = ['combined',"combiined"]
     main()
+
+
+# using same number generate the same table, remove # to uncomment this value
+# seed: 1
