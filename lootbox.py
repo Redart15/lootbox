@@ -225,7 +225,7 @@ def add_lootbox_2items(file, loottables, index):
 # leaves and chest have multiple pools, modifing the pools results in more loot than expected
 # comprimise: the original block is not consumed 
 def make_lootboxPool(index, size):
-    lootbox_path = "minecraft:loot_boxes/lootbox_{}".format(index)
+    lootbox_path = "minecraft:lootboxes/lootbox_{}".format(index)
     lootbox_entry = {"type":'minecraft:loot_table',"name":lootbox_path,"weight":1}
     empty_entry = {"type":'minecraft:empty',"weight": size * 3}
     # its rolls not rools u fucking idiot, and its a float not an int !
@@ -271,6 +271,10 @@ def main():
     """
 
     print('Reading in settings...')
+    box_count = 4
+    version = 16
+    isUnit = True
+
     if len(sys.argv) >= 2:
         try:
             seed = int(sys.argv[1])
@@ -278,20 +282,13 @@ def main():
             print('The seed "{}" is not an integer.'.format(sys.argv[1]))
             exit()
     else:
-        print('If you want to use a specific randomizer seed integer, use: "python randomize.py <seed>"')
+        print('If you want to use a specific seed use: "python randomize.py <seed>"')
         random_data = os.urandom(8)
         seed = int.from_bytes(random_data, byteorder="big")  
 
-    #seed = 1
     random.seed(seed)
-    box_count = 4
-    version = 16
-    isUnit = True
-    hideSeed = True
-    if hideSeed:
-        datapack_name = 'lootbox'
-    else:
-        datapack_name = 'lootbox(seed={},boxcount={},unit={})'.format(seed,box_count,isUnit)
+    datapack_name = 'lootbox'
+    
 
     print('Generating datapack...')
     filepath_list = get_paths2file("loot_tables")
