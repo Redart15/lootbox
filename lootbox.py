@@ -190,7 +190,7 @@ def randomInt(start,stop):
         random_index = random.randint(start, stop-1)
     return random_index
 
-def write_2zipstream(version, datapack_name, datapack_description, filepath_list, loottables, min_value, max_value, zipbytes):
+def write_2zipstream(version, datapack_name, datapack_description, filepath_list, loottables, min_value, max_value, frequenzy, zipbytes):
     print("Beginning writting...")
     prefix_name = "lootbox_{}.json"
     prefix_path = 'data/minecraft/'
@@ -198,7 +198,7 @@ def write_2zipstream(version, datapack_name, datapack_description, filepath_list
 
     zipstream = zipfile.ZipFile(zipbytes, 'w', zipfile.ZIP_DEFLATED, False)
     zipstream_lootboxes(min_value, max_value, combined_table_path, prefix_name, loottables, zipstream)
-    zipstream_editedItems(filepath_list, prefix_path, len(loottables), zipstream)
+    zipstream_editedItems(filepath_list, prefix_path, len(loottables), frequenzy, zipstream)
     zipstream_metadata(version, datapack_name, datapack_description, zipstream)
     zipstream.close()
 
@@ -210,28 +210,28 @@ def zipstream_lootboxes(min_value, max_value, combined_table_path, prefix_name, 
         source = os.path.join(combined_table_path,name)
         zip.writestr(source, json.dumps(output_data, indent=4))
 
-def zipstream_editedItems(filepath_list, prefix_path, size_loottable, zip):
+def zipstream_editedItems(filepath_list, prefix_path, size_loottable, frequenzy, zip):
     index = randomInt(0,size_loottable-1)
     print("Writting and adjusting loottables...")
     for file in filepath_list:
         index = (index + 1) % size_loottable
-        data = add_lootbox_2items(file, index)
+        data = add_lootbox_2items(file, index, frequenzy)
         zip.writestr(os.path.join(prefix_path, file), json.dumps(data,indent=4))
 
-def add_lootbox_2items(file, index): # does not use loottable
+def add_lootbox_2items(file, index, frequenzy): # does not use loottable
     data = load_json(file)
     if not "pools" in data:
         return data
     list_entries = data["pools"]          
-    list_entries.append(make_lootboxPool(index, len(list_entries)))
+    list_entries.append(make_lootboxPool(index, len(list_entries), frequenzy))
     return data
 
 # leaves and chest have multiple pools, modifing the pools results in more loot than expected
 # comprimise: the original block is not consumed 
-def make_lootboxPool(index, size):
+def make_lootboxPool(index, size, frequenzy):
     lootbox_path = "minecraft:lootboxes/lootbox_{}".format(index)
     lootbox_entry = {"type":'minecraft:loot_table',"name":lootbox_path,"weight":1}
-    empty_entry = {"type":'minecraft:empty',"weight": size * 3}
+    empty_entry = {"type":'minecraft:empty',"weight": size * frequenzy}
     # its rolls not rools u fucking idiot, and its a float not an int !
     new_pool = {"rolls":1.0,"bonus_rolls":0.0,"entries":[lootbox_entry,empty_entry]}
     return new_pool
@@ -263,6 +263,7 @@ def main():
             config_data = yaml.load(config_file, Loader=yaml.FullLoader)
         version = config_data.get("version",16)
         box_count = config_data.get("box_count",50)
+        frequenzy = config_data.get("frequenzy",3)
         min_value = config_data.get("min_value",1)
         max_value = config_data.get("max_value",5)
         isUnit = config_data.get("isUnit",True)
@@ -290,7 +291,7 @@ def main():
     zipbytes = io.BytesIO()
     datapack_filename = '{}.zip'.format(datapack_name)
     datapack_description = 'Lootboxes, Box Count:{}, Seed:{}'.format(box_count,seed)
-    write_2zipstream(version, datapack_name, datapack_description, filepath_list, loottables, min_value, max_value, zipbytes)
+    write_2zipstream(version, datapack_name, datapack_description, filepath_list, loottables, min_value, max_value, frequenzy, zipbytes)
 
     print('Zipping files...')
     with open(datapack_filename, 'wb') as file:
@@ -313,6 +314,9 @@ box_count: 50
 # sets how many rolls are made on the lootbox tables itself
 min_value: 1
 max_value: 5
+
+# how frequent the table is rolled
+frequenzy: 3
 
 # some table are made up of a lot of subtables, keep all these table together when distrubitung into lootboxes
 isUnit: True
