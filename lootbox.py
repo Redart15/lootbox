@@ -60,6 +60,7 @@ def add_identifier(list_unitEntries):
                 entry["weight"] = 1
             weight = entry["weight"]
             entry["weight"] = round(weight/total, 2)
+            entry["old_weight"] = weight
 
 # get total weight, for modification
 def get_total(unitEntries, sum_over):
@@ -92,11 +93,10 @@ def collect_entries(pools):
     list_entries = []
     for pool in pools: 
         entries = pool["entries"]
-        for entry in entries: 
+        for entry in entries:
             entry = remove_conditions(entry)
             list_entries.append(entry)
     return list_entries
-
 
 # just to shorten code
 def load_json(source):
