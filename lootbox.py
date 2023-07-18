@@ -34,32 +34,34 @@ def get_paths2file(path):
 def generate_loottables(filepath_list, box_count, isUnit):
     print("Generating lootboxes")
     list_loot = collect_unitEntries(filepath_list)
-    add_identifier(list_loot)
+    for loot in list_loot:
+        add_identifier(loot)
     list_lootboxes = distLoot_boxes(list_loot,box_count,isUnit)
-    adjust_weight(list_lootboxes)
+    for lootbox in list_lootboxes:
+        adjust_weight(lootbox)   
     return list_lootboxes
 
 
-def adjust_weight(list_lootbox):
-    for lootbox in list_lootbox:
+def adjust_weight(lootbox):
+    #for lootbox in list_lootbox:
         # new table has different total weight
-        total = get_total(lootbox,"old_weight")
-        for entry in lootbox:
-            weight = entry["weight"]
-           # common item in origina table are now also common items in new table
-            entry["weight"] = int(math.ceil(weight * total)) # maybe this is the issue
-            del entry["old_weight"]
+    total = get_total(lootbox,"old_weight")
+    for entry in lootbox:
+        weight = entry["weight"]
+        # common item in origina table are now also common items in new table
+        entry["weight"] = int(math.ceil(weight * total)) # maybe this is the issue
+        del entry["old_weight"]
 
 # set weight as percent of total, save old_weight for later
-def add_identifier(list_unitEntries):
-    for unitEntries in list_unitEntries:
-        total = get_total(unitEntries,"weight")
-        for entry in unitEntries:
-            if not "weight" in entry:
-                entry["weight"] = 1
-            weight = entry["weight"]
-            entry["weight"] = round(weight/total, 2)
-            entry["old_weight"] = weight
+def add_identifier(unitEntries):
+    # for unitEntries in list_unitEntries:
+    total = get_total(unitEntries,"weight")
+    for entry in unitEntries:
+        if not "weight" in entry:
+            entry["weight"] = 1
+        weight = entry["weight"]
+        entry["weight"] = round(weight/total, 2)
+        entry["old_weight"] = weight
 
 # get total weight, for modification
 def get_total(unitEntries, sum_over):
@@ -114,10 +116,6 @@ def remove_conditions(toadd):
 def remove_functions(toadd):
     if "functions" in toadd:
         del toadd["functions"]
-        # function_list = toadd["functions"]
-        # for func in function_list:
-        #     if "minecraft:looting_enchant" in func["function"]:
-        #         function_list.remove(func)
 
 def remove_2ndConditions(toadd):
     if "conditions" in toadd:
@@ -149,7 +147,7 @@ def distLoot_boxes(list_loot, box_count,isUnit):
 
     index = 0
     while(list_loot):
-        index = shiftIndex_bounded(index,len(list_lootboxes))
+        index = (index + 1) % len(list_lootboxes)
         lootbox = list_lootboxes[index]
         random_index = randomInt(0,len(list_loot))
         loot = list_loot[random_index]
@@ -171,7 +169,6 @@ def unbox_2list_entries(list_unitEntries):
             unboxed_entries.append(entry)
     return unboxed_entries
 
-
 # cause rand includes the stop element in the range
 def randomInt(start,stop):
     random_index = 0
@@ -179,16 +176,12 @@ def randomInt(start,stop):
         random_index = random.randint(start, stop-1)
     return random_index
 
-# just to shorten code, shift index in circle
-# needed to cicle through list_unitEntries
-def shiftIndex_bounded(init, size):
-    return (init + 1) % size
-
 def write_2zipstream(version, datapack_name, datapack_description, filepath_list, loottables, min_value, max_value, zipbytes):
     print("Beginning writting...")
     prefix_name = "lootbox_{}.json"
     prefix_path = 'data/minecraft/'
     combined_table_path = prefix_path + 'loot_tables/lootboxes'
+
     zipstream = zipfile.ZipFile(zipbytes, 'w', zipfile.ZIP_DEFLATED, False)
     zipstream_lootboxes(min_value, max_value, combined_table_path, prefix_name, loottables, zipstream)
     zipstream_editedItems(filepath_list, prefix_path, loottables, zipstream)
@@ -197,8 +190,6 @@ def write_2zipstream(version, datapack_name, datapack_description, filepath_list
 
 def zipstream_lootboxes(min_value, max_value, combined_table_path, prefix_name, loottables, zip):
     print("Writting lootboxes...")
-    # min_value = 1
-    # max_value = 5
     for x in range(0,len(loottables)):
         name = prefix_name.format(x)
         output_data = {'pools': [{'rolls' : {"min": min_value, "max": max_value},'entries': loottables[x]}]}
@@ -209,7 +200,7 @@ def zipstream_editedItems(filepath_list, prefix_path, loottables, zip):
     index = randomInt(0,len(loottables)-1)
     print("Writting and adjusting loottables...")
     for file in filepath_list:
-        index = shiftIndex_bounded(index, len(loottables))
+        index = (index + 1) % len(loottables)
         data = add_lootbox_2items(file, loottables, index)
         zip.writestr(os.path.join(prefix_path, file), json.dumps(data,indent=4))
 
