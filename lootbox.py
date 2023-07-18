@@ -34,9 +34,9 @@ def get_paths2file(path):
 def generate_loottables(filepath_list, box_count, isUnit):
     print("Generating lootboxes")
     list_loot = collect_unitEntries(filepath_list)
-    add_identifier(list_loot)
+    #add_identifier(list_loot)
     list_lootboxes = distLoot_boxes(list_loot,box_count,isUnit)
-    adjust_weight(list_lootboxes)
+    #adjust_weight(list_lootboxes)
     return list_lootboxes
 
 
@@ -152,7 +152,7 @@ def distLoot_boxes(list_loot, box_count,isUnit):
     while(list_loot):
         index = shiftIndex_bounded(index,len(list_lootboxes))
         lootbox = list_lootboxes[index]
-        random_index = radomInt(0,len(list_loot))
+        random_index = randomInt(0,len(list_loot))
         loot = list_loot[random_index]
         func(loot,lootbox)
         del list_loot[random_index]
@@ -174,7 +174,7 @@ def unbox_2list_entries(list_unitEntries):
 
 
 # cause rand includes the stop element in the range
-def radomInt(start,stop):
+def randomInt(start,stop):
     random_index = 0
     if stop > 0:
         random_index = random.randint(start, stop-1)
@@ -207,7 +207,7 @@ def zipstream_lootboxes(combined_table_path, prefix_name, loottables, zip):
         zip.writestr(source, json.dumps(output_data, indent=4))
 
 def zipstream_editedItems(filepath_list, prefix_path, loottables, zip):
-    index = random.randint(0,len(loottables)-1)
+    index = randomInt(0,len(loottables)-1)
     print("Writting and adjusting loottables...")
     for file in filepath_list:
         index = shiftIndex_bounded(index, len(loottables))
@@ -229,7 +229,7 @@ def make_lootboxPool(index, size):
     lootbox_entry = {"type":'minecraft:loot_table',"name":lootbox_path,"weight":1}
     empty_entry = {"type":'minecraft:empty',"weight": size * 3}
     # its rolls not rools u fucking idiot, and its a float not an int !
-    new_pool = {"rolls":1,"bonus_rolls":0.0,"entries":[lootbox_entry,empty_entry]}
+    new_pool = {"rolls":1.0,"bonus_rolls":0.0,"entries":[lootbox_entry,empty_entry]}
     return new_pool
 
 def zipstream_metadata(version, datapack_name, datapack_description, zipstream):
@@ -285,8 +285,8 @@ def main():
     #seed = 1
     random.seed(seed)
     box_count = 4
-    version = 15
-    isUnit = False
+    version = 16
+    isUnit = True
     hideSeed = True
     if hideSeed:
         datapack_name = 'lootbox'
