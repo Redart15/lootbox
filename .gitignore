@@ -1,0 +1,19 @@
+# ignore all jsons, there are to many
+*.json
+
+# ignore all zip files, theses change alot
+*.zip
+
+# ignore txt file, as those hold error logs
+*.txt
+
+# ignore all direktories, those are just for testing localy
+col/
+combiined/
+combined/
+edited/
+loot_tables/
+lootbox/
+random_loot_68/
+real table/
+
