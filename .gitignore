@@ -8,12 +8,8 @@
 *.txt
 
 # ignore all direktories, those are just for testing localy
-col/
-combiined/
-combined/
-edited/
 loot_tables/
-lootbox/
 random_loot_68/
 real table/
+working_datapack/
 
