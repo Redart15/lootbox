@@ -314,19 +314,24 @@ def main():
 config_context = """
 # 1.20 is Version 16, every major release add 1 to version
 # be warned this script may not be compatable with older versions
-version: 16
+# type Integer
+version: 16 
 
 # determins how many different lootboxes there will be (1-100 recommended)
-box_count: 50
+# type Integer
+box_count: 50 
 
 # sets how many rolls are made on the lootbox tables itself
+# type Integer
 min_value: 1
 max_value: 5
 
-# how frequent the table is rolled
-frequenzy: 3
+# odd of rolling the table, 50 means 50%
+# type Integer
+chance: 25 
 
 # some table are made up of a lot of subtables, keep all these table together when distrubitung into lootboxes
+# type Boolean
 isUnit: True
 """
 
