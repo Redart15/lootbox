@@ -379,8 +379,6 @@ chance: 25.0
 isUnit: True
 """
 
-Header = "{}\n{}\n\n\n"
-
 if __name__ == '__main__':
     excluded_dir = []
     # exclude_dir = ["archaeology", "chests", "entities", "gameplay"]
