@@ -42,7 +42,7 @@ def get_paths2file(path):
     return file_list    
 
 def generate_loottables(filepath_list, box_count, isUnit):
-    print("Generating lootboxes")
+    print("Generating lootboxes...")
     list_loot = collect_unitEntries(filepath_list)
     list_lootboxes = distLoot_boxes(list_loot,box_count,isUnit) 
     return list_lootboxes
@@ -53,9 +53,9 @@ def adjust_weight(lootbox):
         # new table has different total weight
     total = get_total(lootbox,"weight")
     for entry in lootbox:
-        weight = entry["weight"]
+        frequency = entry["frequency"]
         # common item in origina table are now also common items in new table
-        entry["weight"] = int(math.ceil(weight * total)) # maybe this is the issue
+        entry["weight"] = int(math.ceil(frequency * total)) # maybe this is the issue
         del entry["frequency"]
 
 # set weight as percent of total, save old_weight for later
@@ -87,29 +87,40 @@ def collect_unitEntries(filepath_list):
 
 
 def collect_entries(file):
-    list_entries = []
+    list_comp_entries = []
     sub_files = [file]
     while(sub_files):
-        data = load_json(sub_files[0])
-        sub_files.remove(sub_files[0])
+        list_entries = []
+        data = load_json(sub_files.pop(0))
         if not "pools" in data:
             continue
         pools = data["pools"]
         for pool in pools:
-            entries = pool["entries"]
-            for entry in entries:
-                # find all tables and adds them adjusted to the list_entries
-                # need to test this extensivly, to see if the function applies the result correctly
+            toadd_entries = list(pool["entries"])
+            # toadd_entries.extend(pool["entries"])
+            while(toadd_entries):
+                entry = toadd_entries.pop(0)
+                # tables can be rekursiv
                 if "loot_table" in entry["type"]:
                     local_path = entry["name"]
                     local_path = local_path.removeprefix("minecraft:")
                     next_subfile = os.path.join('loot_tables',local_path + '.json')
                     sub_files.append(next_subfile)
-                else:
-                    entry = remove_conditions(entry)
-                    list_entries.append(entry)
-        add_identifier(list_entries) 
-    return list_entries
+                    continue
+                # entry can have a recursive stack of entries -> children -> entries -> ...
+                if "children" in entry:
+                    list_children = entry["children"]
+                    # extend the list untill there is no more entries
+                    toadd_entries.extend(list_children)
+                    continue
+                remove_functions(entry)
+                remove_conditions(entry)
+                list_entries.append(entry)
+        add_identifier(list_entries)
+        list_comp_entries.extend(list_entries)
+    adjust_weight(list_comp_entries)
+    add_identifier(list_comp_entries)
+    return list_comp_entries
 
 # just to shorten code
 def load_json(source):
@@ -119,39 +130,39 @@ def load_json(source):
         data = json.load(source)
     return data
 
-
-# removes a bunch of edge cases, less complexity
-def remove_conditions(entry):
-    # need to extract the entry out of the subentry
-    entry = remove_enchantmentReq(entry)
-    remove_2ndConditions(entry)
-    remove_functions(entry)
-    return entry 
-
 def remove_functions(entry):
     if not "functions" in entry:
         return
     functions = entry["functions"]
-    for function in functions:
-        if "minecraft:looting_enchant" in function["function"]:
-            functions.remove(function)        
+    # cant modify a collections while iterating through it
+    for function in functions[:]:
+        # most conditions are universily applicable, they are very specific, and as such can be put on any type
         if "conditions" in function:
             functions.remove(function)
+            continue
+        # blocks, chest, gameplay and arch can not be killed
+        if "minecraft:looting_enchant" in function["function"]:
+            functions.remove(function)
+            continue
+        # entities, chest, gameplay and arch do not stop nbt data
+        if "minecraft:copy_name" in function["function"]:
+            functions.remove(function)
+            continue
+        # same aplies from above
+        if "minecraft:copy_nbt" in function["function"]:
+            functions.remove(function)
+            continue
+        # same aplies from above
+        if "minecraft:copy_state" in function["function"]:
+            functions.remove(function)
+            continue
+    if len(functions) == 0:
+        del entry["functions"]
 
-
-
-def remove_2ndConditions(entry):
+def remove_conditions(entry):
     if "conditions" in entry:
         del entry["conditions"]
 
-def remove_enchantmentReq(entry):
-    if "children" in entry:
-        for child in entry["children"]:
-            if "conditions" in child:
-                del child["conditions"]
-                entry = child 
-                break
-    return entry
 
 def distLoot_boxes(list_loot, box_count,isUnit):
     count = len(list_loot)
@@ -306,9 +317,11 @@ def main():
         max_value = read_config(config_data,"max_value",5,int)
         isUnit = read_config(config_data,"isUnit",True,bool)
 
-        if chance > 1_000 or chance < 0.001:
+        if chance > 1_000 or chance < 1:
             chance = 25.0
             print("Using default value {} for {}".format(25.0,"chance"))
+        
+        chance = round(chance,3)
 
     if len(sys.argv) >= 2:
         try:
@@ -365,6 +378,8 @@ chance: 25.0
 # type boolean
 isUnit: True
 """
+
+Header = "{}\n{}\n\n\n"
 
 if __name__ == '__main__':
     excluded_dir = []
