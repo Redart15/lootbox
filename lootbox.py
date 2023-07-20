@@ -113,11 +113,12 @@ def collect_entries(file):
 
 # just to shorten code
 def load_json(source):
-    if os.path.exists(source):
-        with open(source,'r') as source:
-            data = json.load(source)
-        return data
-    return {}
+    if not os.path.exists(source):
+        return {}   
+    with open(source,'r') as source:
+        data = json.load(source)
+    return data
+
 
 # removes a bunch of edge cases, less complexity
 def remove_conditions(entry):
@@ -132,12 +133,12 @@ def remove_functions(entry):
         return
     functions = entry["functions"]
     for function in functions:
-        next_function = function["function"]
-        if "minecraft:looting_enchant" in next_function:
+        if "minecraft:looting_enchant" in function["function"]:
+            functions.remove(function)        
+        if "conditions" in function:
             functions.remove(function)
-        
-        # print(entry["functions"])
-        # del entry["functions"]
+
+
 
 def remove_2ndConditions(entry):
     if "conditions" in entry:
