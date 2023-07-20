@@ -11,6 +11,7 @@ import yaml
 
 """
 TODO:
+    write some function to aid people ingame
     write some help, for not programmers
         write --help for python script
         write a popup in chat for help
@@ -48,30 +49,30 @@ def generate_loottables(filepath_list, box_count, isUnit):
     return list_lootboxes
 
 
-def adjust_weight(lootbox):
+def adjust_weight(list_entries):
     #for lootbox in list_lootbox:
         # new table has different total weight
-    total = get_total(lootbox,"weight")
-    for entry in lootbox:
+    total = get_total(list_entries,"weight")
+    for entry in list_entries:
         frequency = entry["frequency"]
         # common item in origina table are now also common items in new table
         entry["weight"] = int(math.ceil(frequency * total)) # maybe this is the issue
         del entry["frequency"]
 
 # set weight as percent of total, save old_weight for later
-def add_identifier(unitEntries):
+def add_identifier(list_entries):
     # for unitEntries in list_unitEntries:
-    total = get_total(unitEntries,"weight")
-    for entry in unitEntries:
+    total = get_total(list_entries,"weight")
+    for entry in list_entries:
         if not "weight" in entry:
             entry["weight"] = 1
         weight = entry["weight"]
         entry["frequency"] = round(weight/total, 2)
 
 # get total weight, for modification
-def get_total(unitEntries, sum_over):
+def get_total(list_entries, sum_over):
     total = 0
-    for entry in unitEntries:  
+    for entry in list_entries:  
         if sum_over in entry:
             total = total + entry[sum_over]
         else:
@@ -251,10 +252,6 @@ def add_lootbox_2items(file, index, chance): # does not use loottable
 # leaves and chest have multiple pools, modifing the pools results in more loot than expected
 # comprimise: the original block is not consumed 
 def make_lootboxPool(index, size, chance):
-    # fraction = Fraction(chance/100)
-    # total_weight = fraction.denominator
-    # loot_weight = fraction.numerator
-    # empty_weight = total_weight - loot_weight
     loot_weight = convert_toInt(chance)
     factor = 100.0/chance
     total = int(round(loot_weight * factor,0))
@@ -282,11 +279,12 @@ def zipstream_metadata(version, datapack_name, datapack_description, zipstream):
     pack_mcmeta_content = {'pack':{'pack_format':version, 'description':datapack_description}}
     tags_path = 'data/minecraft/tags/functions/load.json'
     tags_content = {'values':['{}:reset'.format(datapack_name)]}
-    mcfunction_path = 'data/{}/functions/reset.mcfunction'.format(datapack_name)
-    mcfunction_content = 'tellraw @a ["",{"text":"Tables Lootbox Datapack by Redart15","color":"cyan"}]'
+    mcfunction_reset_path = 'data/{}/functions/reset.mcfunction'.format(datapack_name)
+    mcfunction__reset_content = 'tellraw @a ["",{"text":"Tables Lootbox Datapack by Redart15","color":"red"}]'
+    zipstream.writestr(mcfunction_reset_path, mcfunction__reset_content)
     zipstream.writestr(pack_mcmeta_path, json.dumps(pack_mcmeta_content, indent=4))
     zipstream.writestr(tags_path, json.dumps(tags_content))
-    zipstream.writestr(mcfunction_path, mcfunction_content)
+    
 
 def read_config(config, tupel, default, type):
     value = config.get(tupel, default)
