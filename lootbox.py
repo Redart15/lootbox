@@ -113,35 +113,44 @@ def collect_entries(file):
 
 # just to shorten code
 def load_json(source):
-    with open(source,'r') as source:
-        data = json.load(source)
-    return data
+    if os.path.exists(source):
+        with open(source,'r') as source:
+            data = json.load(source)
+        return data
+    return {}
 
 # removes a bunch of edge cases, less complexity
-def remove_conditions(toadd):
+def remove_conditions(entry):
     # need to extract the entry out of the subentry
-    toadd = remove_enchantmentReq(toadd)
-    remove_2ndConditions(toadd)
-    remove_functions(toadd)
-    return toadd 
+    entry = remove_enchantmentReq(entry)
+    remove_2ndConditions(entry)
+    remove_functions(entry)
+    return entry 
 
-def remove_functions(toadd):
-    if "functions" in toadd:
-        print(entry)
-        del toadd["functions"]
+def remove_functions(entry):
+    if not "functions" in entry:
+        return
+    functions = entry["functions"]
+    for function in functions:
+        next_function = function["function"]
+        if "minecraft:looting_enchant" in next_function:
+            functions.remove(function)
+        
+        # print(entry["functions"])
+        # del entry["functions"]
 
-def remove_2ndConditions(toadd):
-    if "conditions" in toadd:
-        del toadd["conditions"]
+def remove_2ndConditions(entry):
+    if "conditions" in entry:
+        del entry["conditions"]
 
-def remove_enchantmentReq(toadd):
-    if "children" in toadd:
-        for child in toadd["children"]:
+def remove_enchantmentReq(entry):
+    if "children" in entry:
+        for child in entry["children"]:
             if "conditions" in child:
                 del child["conditions"]
-                toadd = child 
+                entry = child 
                 break
-    return toadd
+    return entry
 
 def distLoot_boxes(list_loot, box_count,isUnit):
     count = len(list_loot)
