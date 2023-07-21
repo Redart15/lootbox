@@ -213,7 +213,7 @@ def randomInt(start,stop):
         random_index = random.randint(start, stop-1)
     return random_index
 
-def write_2zipstream(version, datapack_name, datapack_description, filepath_list, loottables, min_value, max_value, chance, zipbytes):
+def write_2zipstream(version, datapack_name, datapack_description, filepath_list, loottables, min_value, max_value, seed, box_count, chance, isUnit, zipbytes):
     print("Beginning writting...")
     prefix_name = "lootbox_{}.json"
     prefix_path = 'data/minecraft/'
@@ -222,7 +222,7 @@ def write_2zipstream(version, datapack_name, datapack_description, filepath_list
     zipstream = zipfile.ZipFile(zipbytes, 'w', zipfile.ZIP_DEFLATED, False)
     zipstream_lootboxes(min_value, max_value, combined_table_path, prefix_name, loottables, zipstream)
     zipstream_editedItems(filepath_list, prefix_path, len(loottables), chance, zipstream)
-    zipstream_metadata(version, datapack_name, datapack_description, zipstream)
+    zipstream_metadata(version, datapack_name, datapack_description, seed, box_count, chance, isUnit, zipstream)
     zipstream.close()
 
 def zipstream_lootboxes(min_value, max_value, combined_table_path, prefix_name, loottables, zip):
@@ -273,17 +273,49 @@ def convert_toInt(chance):
 
     return int(chance * math.pow(10,digits_after_dot))
 
-def zipstream_metadata(version, datapack_name, datapack_description, zipstream):
+def zipstream_metadata(version, datapack_name, datapack_description, seed, box_count, chance, isUnit, zipstream):
     print("Writting metadata....")
+    write_pack_mcmeta(version, datapack_description, zipstream)
+    write_functrions(datapack_name, seed, box_count, chance, isUnit, zipstream)
+    # tags_path = 'data/minecraft/tags/functions/load.json'
+    # tags_content = {'values':['{}:seed'.format(datapack_name)]}
+    # zipstream.writestr(tags_path, json.dumps(tags_content))
+
+def write_functrions(datapack_name, seed, box_count, chance, isUnit, zipstream):
+    mcfunction_path = 'data/{}/functions/{}.mcfunction'
+
+    seed_path =  mcfunction_path.format(datapack_name,"seed")
+    seed_content =  'tellraw @a {"text":"Seed %d"}' % seed
+    zipstream.writestr(seed_path, seed_content)
+
+    box_count_path = mcfunction_path.format(datapack_name,"boxcount")
+    box_count_content = 'tellraw @a {"text":"Number of Boxes %d"}' % box_count
+    zipstream.writestr(box_count_path, box_count_content)
+
+    chance_path = mcfunction_path.format(datapack_name,"chance")
+    chance_content = 'tellraw @a {"text":"Chance to roll a lootbox is %.2f%%"}' % chance
+    zipstream.writestr(chance_path, chance_content)
+
+    unit_path = mcfunction_path.format(datapack_name,"unit")
+    unit_text = "Loottables are found together:{}".format(isUnit)
+    unit_content = 'tellraw @a {"text":\"%s\"}' % unit_text
+    zipstream.writestr(unit_path, unit_content)
+
+    credit_path = mcfunction_path.format(datapack_name,"credit")
+    credit_content = 'tellraw @a {"text":"Lootbox Datapack by Redart15","color":"green"}'
+    zipstream.writestr(credit_path, credit_content)
+
+    # reload_path = mcfunction_path.format(datapack_name,"reset")
+    # reload_content = ''# reset the datapack,
+
+    info_path = mcfunction_path.format(datapack_name,"info")
+    info_content = "function lootbox:seed\nfunction lootbox:boxcount\nfunction lootbox:chance\nfunction lootbox:unit\nfunction lootbox:credit"
+    zipstream.writestr(info_path, info_content)
+
+def write_pack_mcmeta(version, datapack_description, zipstream):
     pack_mcmeta_path = 'pack.mcmeta'
     pack_mcmeta_content = {'pack':{'pack_format':version, 'description':datapack_description}}
-    tags_path = 'data/minecraft/tags/functions/load.json'
-    tags_content = {'values':['{}:reset'.format(datapack_name)]}
-    mcfunction_reset_path = 'data/{}/functions/reset.mcfunction'.format(datapack_name)
-    mcfunction__reset_content = 'tellraw @a ["",{"text":"Tables Lootbox Datapack by Redart15","color":"red"}]'
-    zipstream.writestr(mcfunction_reset_path, mcfunction__reset_content)
     zipstream.writestr(pack_mcmeta_path, json.dumps(pack_mcmeta_content, indent=4))
-    zipstream.writestr(tags_path, json.dumps(tags_content))
     
 
 def read_config(config, tupel, default, type):
@@ -344,7 +376,7 @@ def main():
     zipbytes = io.BytesIO()
     datapack_filename = '{}.zip'.format(datapack_name)
     datapack_description = 'Lootboxes, Box Count:{}, Seed:{}'.format(box_count,seed)
-    write_2zipstream(version, datapack_name, datapack_description, filepath_list, loottables, min_value, max_value, chance, zipbytes)
+    write_2zipstream(version, datapack_name, datapack_description, filepath_list, loottables, min_value, max_value, seed, box_count, chance, isUnit, zipbytes)
 
     print('Zipping files...')
     with open(datapack_filename, 'wb') as file:
