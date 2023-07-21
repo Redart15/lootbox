@@ -157,6 +157,9 @@ def remove_functions(entry):
         if "minecraft:copy_state" in function["function"]:
             functions.remove(function)
             continue
+        if "minecraft:apply_bonus" in function["function"]:
+            functions.remove(function)
+            continue
     if len(functions) == 0:
         del entry["functions"]
 
