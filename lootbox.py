@@ -375,7 +375,7 @@ def main():
     print('Preparing data...')
     zipbytes = io.BytesIO()
     datapack_filename = '{}.zip'.format(datapack_name)
-    datapack_description = 'Lootboxes, Box Count:{}, Seed:{}'.format(box_count,seed)
+    datapack_description = 'Lootboxes, Seed:{}, Box Count:{}, Chance:{}, isUnit:{}'.format(seed,box_count,chance,isUnit)
     write_2zipstream(version, datapack_name, datapack_description, filepath_list, loottables, min_value, max_value, seed, box_count, chance, isUnit, zipbytes)
 
     print('Zipping files...')
