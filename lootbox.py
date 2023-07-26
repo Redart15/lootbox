@@ -31,7 +31,7 @@ loot_table:pool
             entry:dict
 """
 
-# need paths multiple times to keep the code readable
+# need "path" multiple times to keep the code readable
 def get_paths2file(path):
     print("Getting filepaths...")
     file_list = []
@@ -45,14 +45,14 @@ def get_paths2file(path):
 def generate_loottables(filepath_list, box_count, isUnit):
     print("Generating lootboxes...")
     list_loot = collect_unitEntries(filepath_list)
-    list_lootboxes = distLoot_boxes(list_loot,box_count,isUnit) 
+    list_lootboxes = dist_into_boxes(list_loot,box_count,isUnit) 
     return list_lootboxes
 
 
 def adjust_weight(list_entries):
     #for lootbox in list_lootbox:
         # new table has different total weight
-    total = get_total(list_entries,"weight")
+    total = get_total_weights(list_entries,"weight")
     for entry in list_entries:
         frequency = entry["frequency"]
         # common item in origina table are now also common items in new table
@@ -60,9 +60,9 @@ def adjust_weight(list_entries):
         del entry["frequency"]
 
 # set weight as percent of total, save old_weight for later
-def add_identifier(list_entries):
+def add_freq_origin(list_entries):
     # for unitEntries in list_unitEntries:
-    total = get_total(list_entries,"weight")
+    total = get_total_weights(list_entries,"weight")
     for entry in list_entries:
         if not "weight" in entry:
             entry["weight"] = 1
@@ -70,7 +70,7 @@ def add_identifier(list_entries):
         entry["frequency"] = round(weight/total, 2)
 
 # get total weight, for modification
-def get_total(list_entries, sum_over):
+def get_total_weights(list_entries, sum_over):
     total = 0
     for entry in list_entries:  
         if sum_over in entry:
@@ -80,47 +80,56 @@ def get_total(list_entries, sum_over):
             entry[sum_over] = 1
     return total
 
+# naming somewhat bad, but in short it collect all the drops of a given table to a unit
 def collect_unitEntries(filepath_list):
     list_unitEntries = []
     for file in filepath_list:
         list_unitEntries.append(collect_entries(file))
     return list_unitEntries
 
-
+# there is definetly a better way to write this
 def collect_entries(file):
     list_comp_entries = []
     sub_files = [file]
+    # table can contain multiple tables themself
     while(sub_files):
         list_entries = []
         data = load_json(sub_files.pop(0))
         if not "pools" in data:
             continue
         pools = data["pools"]
+        # tables have multiple pools
         for pool in pools:
             toadd_entries = list(pool["entries"])
-            # toadd_entries.extend(pool["entries"])
+            # and each pool can have multiple entries
             while(toadd_entries):
                 entry = toadd_entries.pop(0)
-                # tables can be rekursiv
                 if "loot_table" in entry["type"]:
                     local_path = entry["name"]
                     local_path = local_path.removeprefix("minecraft:")
                     next_subfile = os.path.join('loot_tables',local_path + '.json')
                     sub_files.append(next_subfile)
+                    # skip looking at other options, maybe there are cases where 
+                    # such tables aso have children, where this may not be a good idea
                     continue
-                # entry can have a recursive stack of entries -> children -> entries -> ...
+                # children can have also entries themself, and as such have to piped loop as well
                 if "children" in entry:
                     list_children = entry["children"]
                     # extend the list untill there is no more entries
                     toadd_entries.extend(list_children)
                     continue
+                # most functions are to specific and as such have to be removed
                 remove_functions(entry)
+                # no conditions in universal, as such has to be removed
                 remove_conditions(entry)
                 list_entries.append(entry)
-        add_identifier(list_entries)
+        # weight have to be adjusted as ther result list can be comprised of multiple files
+        add_freq_origin(list_entries)
         list_comp_entries.extend(list_entries)
+    # new weights now represent how frequent these items are normaly dropped
     adjust_weight(list_comp_entries)
-    add_identifier(list_comp_entries)
+    # table is bound to be divid, frequency is proportional to origin, weight are as such adjusted
+    add_freq_origin(list_comp_entries)
     return list_comp_entries
 
 # just to shorten code
@@ -168,7 +177,7 @@ def remove_conditions(entry):
         del entry["conditions"]
 
 
-def distLoot_boxes(list_loot, box_count,isUnit):
+def dist_into_boxes(list_loot, box_count,isUnit):
     count = len(list_loot)
 
     # option between unit or individual entries
@@ -179,12 +188,14 @@ def distLoot_boxes(list_loot, box_count,isUnit):
         func = dist_entries
 
     # lootboxes need to be filled with at least one element
+    # this is also the reason files cannot be read and written at the same time
     if(box_count > count):
         box_count = count
     list_lootboxes = [[] for _ in range(box_count)]
 
     index = 0
     while(list_loot):
+        # rotates through all boxes
         index = (index + 1) % len(list_lootboxes)
         lootbox = list_lootboxes[index]
         random_index = randomInt(0,len(list_loot))
@@ -221,10 +232,10 @@ def write_2zipstream(version, datapack_name, datapack_description, filepath_list
     prefix_name = "lootbox_{}.json"
     prefix_path = 'data/minecraft/'
     combined_table_path = prefix_path + 'loot_tables/lootboxes'
-
     zipstream = zipfile.ZipFile(zipbytes, 'w', zipfile.ZIP_DEFLATED, False)
     zipstream_lootboxes(min_value, max_value, combined_table_path, prefix_name, loottables, zipstream)
     zipstream_editedItems(filepath_list, prefix_path, len(loottables), chance, zipstream)
+    # writes functions and additional information into zipfile
     zipstream_metadata(version, datapack_name, datapack_description, seed, box_count, chance, isUnit, zipstream)
     zipstream.close()
 
@@ -266,6 +277,7 @@ def make_lootboxPool(index, size, chance):
     new_pool = {"rolls":1.0,"bonus_rolls":0.0,"entries":[lootbox_entry,empty_entry]}
     return new_pool
 
+# originaly number was given as float, and as such needed to be converted into int
 def convert_toInt(chance):
     string = str(chance)
     if '.' in string:
@@ -273,20 +285,20 @@ def convert_toInt(chance):
         digits_after_dot = len(string) - index - 1
     else:
         digits_after_dot = 0
-
     return int(chance * math.pow(10,digits_after_dot))
 
 def zipstream_metadata(version, datapack_name, datapack_description, seed, box_count, chance, isUnit, zipstream):
     print("Writting metadata....")
     write_pack_mcmeta(version, datapack_description, zipstream)
     write_functrions(datapack_name, seed, box_count, chance, isUnit, zipstream)
+    # in the original insperation these file were written, however no idea why
     # tags_path = 'data/minecraft/tags/functions/load.json'
     # tags_content = {'values':['{}:seed'.format(datapack_name)]}
     # zipstream.writestr(tags_path, json.dumps(tags_content))
 
 def write_functrions(datapack_name, seed, box_count, chance, isUnit, zipstream):
     mcfunction_path = 'data/{}/functions/{}.mcfunction'
-
+    # writed all the nessery functions to file
     seed_path =  mcfunction_path.format(datapack_name,"seed")
     seed_content =  'tellraw @a {"text":"Seed %d"}' % seed
     zipstream.writestr(seed_path, seed_content)
@@ -338,22 +350,26 @@ def main():
              config_file.write(config_context)
         print("Before generating the loottable, you might want to adjust settings in setting.yaml")
         print("After that just start the script a new.")
+        # ends the program early to allow player to set their own settings.
         exit()
     else:
         print('Reading in settings...')
         with open(path, 'r') as config_file:
             config_data = yaml.load(config_file, Loader=yaml.FullLoader)
+        # probably better to ust set defaults somewhere central and allow player to modify them instead of a file, but not sure
         version = read_config(config_data,"version",16,int)
         box_count = read_config(config_data,"box_count",50,int)
         chance = read_config(config_data,"chance",25.0,float)
         min_value = read_config(config_data,"min_value",1,int)
         max_value = read_config(config_data,"max_value",5,int)
         isUnit = read_config(config_data,"isUnit",True,bool)
-
+        
+        # cause of the conversion numbers need to be a set size long
         if chance > 1_000 or chance < 1:
             chance = 25.0
             print("Using default value {} for {}".format(25.0,"chance"))
         
+        # decided to round up
         chance = round(chance,3)
 
     if len(sys.argv) >= 2:
