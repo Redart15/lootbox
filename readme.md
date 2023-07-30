@@ -3,8 +3,9 @@
 [![made-with-python](https://img.shields.io/badge/Made%20with-Python-1f425f.svg)](https://www.python.org/)
 [![Windows](https://badgen.net/badge/icon/windows?icon=windows&label)](https://microsoft.com/windows/)
  [![GitHub release](https://img.shields.io/github/release/Redart15/lootbox)](https://GitHub.com/Redart15/lootbox/releases/)\
-[![GitHub latest commit](https://badgen.net/github/last-commit/Redart15/lootbox)](https://GitHub.com/Redart15/lootbox/commit/)\
 [![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://GitHub.com/Redart15/lootbox/graphs/commit-activity)
+[![GitHub latest commit](https://badgen.net/github/last-commit/Redart15/lootbox)](https://GitHub.com/Redart15/lootbox/commit/)
+
 <!--[![GitHub all releases](https://img.shields.io/github/downloads/redart15/lootbox/total)](https://GitHub.com/Redart15/lootbox/releases/)-->
 
 
