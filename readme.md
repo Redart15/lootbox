@@ -5,7 +5,7 @@
 [![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://GitHub.com/Redart15/lootbox/graphs/commit-activity)\
 [![Windows](https://badgen.net/badge/icon/windows?icon=windows&label)](https://microsoft.com/windows/)\
  [![GitHub release](https://img.shields.io/github/release/Redart15/lootbox)](https://GitHub.com/Redart15/lootbox/releases/)\
-[![GitHub all releases](https://img.shields.io/github/downloads/redart15/lootbox/total)](https://GitHub.com/Redart15/lootbox/releases/)
+<!--[![GitHub all releases](https://img.shields.io/github/downloads/redart15/lootbox/total)](https://GitHub.com/Redart15/lootbox/releases/)-->
 
 
 
