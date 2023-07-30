@@ -5,7 +5,7 @@ import sys
 import zipfile
 import io
 import math
-import yaml
+# import yaml does not work with windows
 
 
 
@@ -342,35 +342,51 @@ def read_config(config, tupel, default, type):
         print("Using default value {} for {}".format(default,tupel))
         return default
 
+def read_config(config_data, key, default, data_type):
+    return data_type(config_data.get(key, default))
+
 def main():
     current_directory = os.getcwd()
-    path = os.path.join(current_directory, "setting.yml")
+    path = os.path.join(current_directory, "setting.json")
+
     if not os.path.exists(path):
+        config_data = {
+            "version": 16,
+            "box_count": 50,
+            "chance": 25.0,
+            "min_value": 1,
+            "max_value": 5,
+            "isUnit": True
+        }
+
         with open(path, 'w') as config_file:
-             config_file.write(config_context)
-        print("Before generating the loottable, you might want to adjust settings in setting.yaml")
+            json.dump(config_data, config_file)
+
+        print("Before generating the loottable, you might want to adjust settings in settings.json")
         print("After that just start the script a new.")
-        # ends the program early to allow player to set their own settings.
+        # ends the program early to allow the player to set their own settings.
         exit()
     else:
         print('Reading in settings...')
         with open(path, 'r') as config_file:
-            config_data = yaml.load(config_file, Loader=yaml.FullLoader) # does not work with windows....
-        # probably better to ust set defaults somewhere central and allow player to modify them instead of a file, but not sure
-        version = read_config(config_data,"version",16,int)
-        box_count = read_config(config_data,"box_count",50,int)
-        chance = read_config(config_data,"chance",25.0,float)
-        min_value = read_config(config_data,"min_value",1,int)
-        max_value = read_config(config_data,"max_value",5,int)
-        isUnit = read_config(config_data,"isUnit",True,bool)
-        
-        # cause of the conversion numbers need to be a set size long
-        if chance > 1_000 or chance < 1:
-            chance = 25.0
-            print("Using default value {} for {}".format(25.0,"chance"))
-        
-        # decided to round up
-        chance = round(chance,3)
+            config_data = json.load(config_file)
+
+        # probably better to set defaults somewhere central and allow players to modify them instead of a file, but not sure
+        version = read_config(config_data, "version", 16, int)
+        box_count = read_config(config_data, "box_count", 50, int)
+        chance = read_config(config_data, "chance", 25.0, float)
+        min_value = read_config(config_data, "min_value", 1, int)
+        max_value = read_config(config_data, "max_value", 5, int)
+        isUnit = read_config(config_data, "isUnit", True, bool)
+
+    # cause of the conversion numbers need to be a set size long
+    if chance > 1_000 or chance < 1:
+        chance = 25.0
+        print("Using default value {} for {}".format(25.0, "chance"))
+
+    # decided to round up
+    chance = round(chance, 3)
+
 
     if len(sys.argv) >= 2:
         try:
