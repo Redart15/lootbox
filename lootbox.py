@@ -355,7 +355,7 @@ def main():
     else:
         print('Reading in settings...')
         with open(path, 'r') as config_file:
-            config_data = yaml.load(config_file, Loader=yaml.FullLoader)
+            config_data = yaml.load(config_file, Loader=yaml.FullLoader) # does not work with windows....
         # probably better to ust set defaults somewhere central and allow player to modify them instead of a file, but not sure
         version = read_config(config_data,"version",16,int)
         box_count = read_config(config_data,"box_count",50,int)
